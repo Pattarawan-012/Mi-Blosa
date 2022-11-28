@@ -1,0 +1,65 @@
+{% extends "layouts/layout-fluid.html" %}
+
+{% block main %}
+
+<div class="login-content">
+    <div class="header">
+        <span>Mi bolsa login</span>
+    </div>
+
+    <div class="form-box">
+		<input placeholder="Username" type="text" name="username" id="username"> 
+		<input placeholder="Password" type="password" name="password" id="password"> 
+		<span style="margin-top: 1rem; display: inline-block;">Don't have an account? <a href="/register">Create</a></span> 
+		<button id="login">login</button>
+	</div>
+</div>
+
+<script>
+    $(document).ready(function(){
+
+        $('#login').on('click', function(){
+            var valid = true
+
+            if($("#username").val() == ""){
+                valid = false
+                $("#username").addClass("invalid")
+            }
+
+            if($("#password").val() == ""){
+                valid = false
+                $("#password").addClass("invalid")
+            }
+
+            if(!valid){
+                return
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "get-login",
+                data: {
+                    username: $("#username").val(),
+                    password: $("#password").val()
+                },
+                success: function(resp){
+                    console.log(resp.status.message)
+                    if(resp.status.message == "OK"){
+                        window.location.href = '/home';
+                    }else if(resp.status.message == "ERROR"){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Login Failed',
+                        })
+                    }
+                }
+            })
+        })
+
+        $("input").on('change, keyup', function(){
+            $(this).removeClass('invalid')
+        })
+
+    })
+</script>
+{% endblock main %}

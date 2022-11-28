@@ -1,0 +1,210 @@
+{% extends "layouts/layout.html" %}
+
+{% block main %}
+
+<style>
+    .container {
+        background-color: #e9e9e9;
+    }
+    .cart-content{
+        background-color: white;
+        padding: 1rem 1rem 3rem 1rem;
+    }
+</style>
+
+<div class="cart-content">
+    <div class="header">
+        <div class="logo">
+            <span>Mi bolsa</span>
+        </div>
+        <div class="menu">
+            <a href="/login">Logout</a>
+        </div>
+    </div>
+    <div class="body">
+        <div class="cart">
+            <div class="header">
+                <span>Shopping Cart.</span>
+            </div>
+
+            <table class="table-cart">
+                <thead>
+                    <tr>
+                        <td style="width: 20%;">Product</td>
+                        <td class="column-center" style="width: 30%;"></td>
+                        <td class="column-center" style="width: 20%;">Quantity</td>
+                        <td class="column-center" style="width: 20%;">Total Price</td>
+                        <td class="column-center" style="width: 10%;"></td>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                </tbody>
+            </table>
+            
+            <div class="summary">
+                <thead>
+                    <tr>
+                        <td style="width: 80%;"></td>
+                        <td style="width: 20%;"></td>
+                    </tr>
+                </thead>
+                <table>
+                    <tr>
+                        <td class="column-right">Subtotal:</td>
+                        <td class="column-right" id="subtotal">0</td>
+                    </tr>
+                    <tr>
+                        <td class="column-right">Shipping:</td>
+                        <td class="column-right" id="shipping">0</td>
+                    </tr>
+                    <tr class="total">
+                        <td class="column-right">Total:</td>
+                        <td class="column-right" id="total">0</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="back">
+                <i class="fa-solid fa-chevron-left"></i>
+                <span>Continue Shopping</span>
+            </div>
+        </div>
+        <div class="payment">
+            <div class="header">
+                <span>Payment Info.</span>
+            </div>
+            <div class="methods">
+                <div class="title">
+                    <span>Payment Methods.</span>
+                </div>
+                <div class="list checked">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Promtpay</span>
+                </div>
+            </div>
+            <div class="body">
+                <div class="image">
+                    <img src="../../static/image/sample-promptpay-qr-code-blurred.jpg" alt="">
+                </div>
+            </div>
+            <button style="cursor: pointer;" onClick="purchase()">Check Out.</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    
+    $(document).ready(function(){
+        
+        $.ajax({
+            type: "GET",
+            url: "/get-cart",
+            dataType: "json",
+            success: function (res) {
+                console.log(res)
+                if(res.status.message == "OK"){
+                    // console.log(res.response.cart)
+                    var data = res.response.cart;
+
+                    var count = 0;
+                    var subtotal = 0;
+                    var shipping = 0;
+                    var total = 0;
+                    console.log(data)
+                    if(data.length > 0){
+                        data.forEach(item => {
+                            if(item.crt_amount > 0){
+                                count++;
+                                var html = "";
+                                html += `<tr>`
+                                html += `    <td class="column-center image"><img src="${item.pct_image}"></td>`
+                                html += `    <td>${item.pct_name}</td>`
+                                html += `    <td class="column-center">${item.crt_amount}</td>`
+                                html += `    <td class="column-center">$${parseFloat(item.pct_price * item.crt_amount).toFixed(2)}</td>`
+                                html += `    <td class="column-center" id="delete"><input type="hidden" value="${item.crt_id}"><i class="fa-solid fa-xmark"></i></td>`
+                                html += `</tr>`
+                                
+                                subtotal += item.pct_price * item.crt_amount
+
+                                $('.table-cart').append(html)
+                            }
+
+                            total = parseFloat(subtotal) + parseFloat(shipping)
+
+                            $("#subtotal").html('$' + parseFloat(subtotal).toFixed(2))
+                            $("#shipping").html('$' + parseFloat(shipping).toFixed(2))
+                            $("#total").html('$' + parseFloat(total).toFixed(2))
+                        });
+                        
+                        if(count == 0){
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Please select a product',
+                            }).then(function(){
+                                location.href = '{{ config.PATH }}/home'
+                            })
+                        }
+                    }else{
+                        location.href = '{{ config.PATH }}/home'
+                    }
+                }else{
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Shopping cart is empty',
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then((result) => {
+                        window.location.href = '/home';
+                    }) 
+                }
+            }
+        });
+
+        $(".back").on('click', function(){
+            location.href = '/home'
+        })
+
+        $("tbody").on('click', "#delete i", function(){
+            var id = $(this).closest('td').find("input").val()
+
+            $.ajax({
+                type: "POST",
+                url: "/delete-cart",
+                data: {
+                    crt_id: id
+                },
+                success: function(resp){
+                    if(resp['status']['message'] == "OK"){
+                        location.reload()
+                    }
+                }
+            })
+        })
+    })
+
+    function purchase(){
+        $.ajax({
+            type: "POST",
+            url: "/get-payment",
+            dataType: "json",
+            success: function (res) {
+                console.log(res)
+                if(res.status.message == "OK"){
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Purchase Success',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then((result) => {
+                        window.location.href = '/home';
+                    })      
+                }
+            }
+        });
+    }
+</script>
+{% endblock main %}

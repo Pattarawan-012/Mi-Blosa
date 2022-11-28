@@ -1,0 +1,199 @@
+{% extends "layouts/layout.html" %}
+
+{% block main %}
+
+<style>
+    .container {
+        background-color: black;
+    }
+    .home-content{
+        background-color: white;
+        padding: 1rem 1rem 3rem 1rem;
+    }
+</style>
+<div class="home-content">
+    <div class="header">
+        <div class="logo">
+            <span>Mi bolsa</span>
+        </div>
+        <div class="menu">
+            <a id="my-cart" style="cursor: pointer;">My Cart</a>
+            <a href="/login">Logout</a>
+        </div>
+    </div>
+    <div class="main-banner">
+        <div id="slider">
+            <figure>
+                <img src="../../static/image/banner/M1new.jpg" alt="">
+                <img src="../../static/image/banner/M2.jpg" alt="">
+                <img src="../../static/image/banner/bgnew.jpg" alt="">
+                <img src="../../static/image/banner/M6.jpg" alt="">
+                <img src="../../static/image/banner/M10.jpg" alt="">
+            </figure>
+        </div>
+    </div>
+    <div class="body">
+        <div class="product">
+            
+            <div class="items">
+                
+            </div>
+        </div>
+        <div class="sub-banner">
+            <div class="banner">
+                <div class="image">
+                    <img src="../../static/image/banner/S1.jpg" alt="">
+                </div>
+                <div class="image">
+                    <img src="../../static/image/banner/S2.jpg" alt="">
+                </div>
+            </div>
+
+            <div class="info">
+                <span class="title"><center>Mi Bolsa<center></span>
+                <p>It is a brand that sells genuine brand-name bags. Founded in 2022
+                    History of the brand The brand name is Mi Bolsa, which in Spanish means my bag.
+                     Our brand sells only quality products. so that all customers are satisfied with the product and in addition, 
+                     there are also bags to choose from in a variety of styles
+                </p>
+            </div>
+            
+        </div>
+
+        
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+
+        $.ajax({
+            type: "GET",
+            url: "get-all-product",
+            success: function(resp){
+                var data = resp.response.products;
+
+                if(data.length > 0){
+                    data.forEach(item => {
+                        var html = "";
+                        html += `<div class="item">`
+                        if(item.pct_amount <= 0){
+                            html += `    <div class="overlay show"><span>Out Of Stock</span></div>`
+                        }else{
+                            html += `    <div class="overlay"><span>Out Of Stock</span></div>`
+                        }
+                        html += `    <div class="image">`
+                        html += `        <img src="${item.pct_image}" alt="">`
+                        html += `    </div>`
+                        html += `    <div class="detail">`
+                        html += `        <span class="name">${item.pct_name}</span>`
+                        html += `        <span class="price">$${parseFloat(item.pct_price).toFixed(2)}</span>`
+                        html += `    </div>`
+                        html += `    <div class="adding">`
+                        html += `        <div class="number-group">`
+                        html += `            <div id="plus">`
+                        html += `                <i class="fa-solid fa-plus"></i>`
+                        html += `            </div>`
+                        html += `            <input type="number" value="1" name="quantity" id="quantity">`
+                        html += `            <div id="minus">`
+                        html += `                <i class="fa-solid fa-minus"></i>`
+                        html += `            </div>`
+                        html += `        </div>`
+                        html += `        <div class="button" id="add">`
+                        html += `            <input type="hidden" value="${item.pct_id}" name="id">`
+                        html += `            <i class="fa-solid fa-cart-shopping"></i>`
+                        html += `        </div>`
+                        html += `    </div>`
+                        html += `</div>`
+                        
+                        $('.items').append(html);
+                    });
+                }else{
+                    $(".product").prepend('<div class="empty"><span>Empty Product</span></div>')
+                }
+            }
+        })
+
+        $('.product').on('click', '#add', function(){
+            var quantity = $(this).closest('.adding').find('input[name="quantity"]').val();
+            var id = $(this).closest('.button').find('[name="id"]').val();
+
+            console.log(id)   
+            if(quantity < 0){
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Can add empty data!',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/add-to-cart",
+                dataType: "json",
+                data: {
+                    pct_id : id,
+                    pct_amount: quantity
+                },
+                success: function (res) {
+                    // console.log(res);
+                    if(res.status.message == "OK"){
+                        Swal.fire({
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Your work has been saved',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(function(){
+                            
+                        })
+                    }else if(res.status.message == "ERROR"){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Not enough product!',
+                        }).then(function(){
+                            location.reload();
+                        })
+                    }
+                }
+            });
+        })
+
+        $(".product").on('click', '#plus', function(){
+            var quantity = $(this).closest('.number-group').find('input').val()
+            $(this).closest('.number-group').find('input').val(parseInt(quantity)+1)
+        })
+
+        $(".product").on('click', '#minus', function(){
+            var quantity = $(this).closest('.number-group').find('input').val()
+            if(parseInt(quantity) > 1){
+                $(this).closest('.number-group').find('input').val(parseInt(quantity)-1)
+            }
+        })
+
+        $("#my-cart").on('click', function(){
+            $.ajax({
+            type: "GET",
+            url: "/get-cart",
+            dataType: "json",
+            success: function (res) {
+                console.log(res)
+ 
+                var data = res.response.cart;
+                if(data.length > 0){
+                    location.href = "/cart"
+                }else{
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Shopping cart is empty',
+                    })
+                }
+            }
+        });
+        })
+    })
+</script>
+{% endblock main %}

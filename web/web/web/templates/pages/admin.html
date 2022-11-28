@@ -1,0 +1,149 @@
+{% extends "layouts/layout-fluid.html" %}
+
+{% block main %}
+<a href="/home">Back to shop</a><br><br>
+<button id="add">Add</button><br><br>
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Image</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Operator</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function(){
+        $.ajax({
+            type: "GET",
+            url: "get-all-product",
+            success: function(resp){
+                var data = resp.response.products;
+
+                data.forEach(item => {
+                    var html = "";
+                    html += `<tr>`
+                    html += `<td id="id">${item.pct_id}</td>`
+                    html += `<td id="name"><input type="text" value="${item.pct_name}"></td>`
+                    html += `<td id="image">`
+                    html += `    <input type='file' id="select" /><br>`
+                    html += `    <img id="blah" src="${item.pct_image}" style="width: 100px;"/>`
+                    html += `    <input type='hidden' value="${item.pct_image}" id="blob" />`
+                    html += `</td>`
+                    html += `<td id="price"><input type="number" value="${item.pct_price}"></td>`
+                    html += `<td id="quantity"><input type="number" value="${item.pct_amount}"></td>`
+                    html += `<td><button id="save">Save</button><button id="remove">Remove</button></td>`
+                    html += `</tr>`
+
+                    $('tbody').append(html);
+                });
+            }
+        })
+
+        $("#add").on('click', function(){
+            var html = ""
+            html += `<tr>`
+            html += `<td id="id"></td>`
+            html += `<td id="name"><input type="text" value=""></td>`
+            html += `<td id="image">`
+            html += `    <input type='file' id="select" /><br>`
+            html += `    <img id="blah" src="" style="width: 100px;"/>`
+            html += `    <input type='hidden' id="blob" />`
+            html += `</td>`
+            html += `<td id="price"><input type="number" value=""></td>`
+            html += `<td id="quantity"><input type="number" value=""></td>`
+            html += `<td><button id="save">Save</button><button id="remove">Remove</button></td>`
+            html += `</tr>`
+
+            $('tbody').append(html);  
+        })
+        
+
+        $("tbody").on('click', '#save', function(){
+            var id = $(this).closest('tr').find('#id').html()
+            var name = $(this).closest('tr').find('#name input').val()
+            var price = $(this).closest('tr').find('#price input').val()
+            var quantity = $(this).closest('tr').find('#quantity input').val()
+            var image = $(this).closest('tr').find('#image #blob').val()
+            
+            $.ajax({
+                type: "POST",
+                url: "/update-product",
+                data: {
+                    pct_id: id,
+                    pct_name: name,
+                    pct_amount: quantity,
+                    pct_price: price,
+                    pct_image: image
+                },
+                success: function(resp){
+                    location.reload()
+                }
+            })
+        })
+
+        $("tbody").on('click', '#remove', function(){
+            var id = $(this).closest('tr').find('#id').html()
+            
+            var el = $(this).closest('tr')
+            if(id == ""){
+                el.remove()
+            }else{
+                $.ajax({
+                    type: "POST",
+                    url: "remove-product",
+                    data: {
+                        pct_id: id
+                    },
+                    success: function(resp){
+                        el.remove()
+                    }
+                })
+            }
+        })
+
+        $("tbody").on('change', "#select", function(){
+            $(this)[0].files[0];
+
+            var image = $(this).closest('tr').find('#image #blah')
+            var blob = $(this).closest('tr').find('#image #blob')
+
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                console.log(e)
+
+
+                image.attr('src', e.currentTarget.result).height(100);
+                
+                blob.val(e.currentTarget.result);
+            };
+
+            reader.readAsDataURL($(this)[0].files[0]);
+
+        })
+    })
+
+    function readURL(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $(this).closest('tr').find('#blah').attr('src', e.target.result).height(100);
+                    
+                    $(this).closest('tr').find('#blob').val(e.target.result);
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+</script>
+{% endblock main %}

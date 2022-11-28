@@ -1,0 +1,99 @@
+{% extends "layouts/layout.html" %}
+
+{% block main %}
+
+<div class="login-content">
+    <div class="header">
+        <span>Register</span>
+    </div>
+
+    <div class="form-box">
+		<input placeholder="Username" type="text" name="username" id="username"> 
+		<input placeholder="Password" type="password" name="password" id="password"> 
+		<input placeholder="Confirm Password" type="password" name="confirm_password" id="confirm_password"> 
+		<input placeholder="Email" type="email" name="email" id="email"> 
+		<input placeholder="Address" type="text" name="address" id="address"> 
+		<span style="margin-top: 1rem; display: inline-block;">Back to <a href="/login">Login</a></span> 
+		<button id="register">Register</button>
+	</div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        $('#register').on('click', function(){
+
+            var valid = true
+
+            if($("#username").val() == ""){
+                valid = false
+                $("#username").addClass("invalid")
+            }
+
+            if($("#password").val() == ""){
+                valid = false
+                $("#password").addClass("invalid")
+            }
+
+            if($("#confirm_password").val() == ""){
+                valid = false
+                $("#confirm_password").addClass("invalid")
+            }
+
+            if($("#password").val() != $("#confirm_password").val()){
+                $("#password").addClass("invalid")
+                $("#confirm_password").addClass("invalid")
+                valid = false
+            }
+
+            if($("#email").val() == ""){
+                valid = false
+                $("#email").addClass("invalid")
+            }
+
+            if($("#address").val() == ""){
+                valid = false
+                $("#address").addClass("invalid")
+            }
+
+            if(!valid){
+                return
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/get-register",
+                data: {
+                    username: $("#username").val(),
+                    password: $("#password").val(),
+                    email: $("#email").val(),
+                    address: $("#address").val(),
+                },
+                success: function(resp){
+                    if(resp.status.message == "OK"){
+                        window.location.href = '/login';
+                    }else if(resp.status.message == "ERROR"){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Register Failed',
+                        })
+                    }else if(resp.status.message == "USERNAMA_ALREADY"){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Username already',
+                        })
+                    }else if(resp.status.message == "EMAIL_ALREADY"){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Email already',
+                        })
+                    }
+                }
+            })
+        })
+
+        $("input").on('change, keyup', function(){
+            $(this).removeClass('invalid')
+        })
+    })
+</script>
+{% endblock main %}
